@@ -3,6 +3,7 @@ Sensory channels, knowledge channels and sensorimotor channels for OpenNARS
 
 # NLPAndKnowledgeChannel.py example:
 
+```
 python3 NLPAndKnowledgeChannel.py | ./NAR shell
 a cat is a mammal
 Input: <Cat --> Mammal>. Priority=1.000000 Truth: frequency=1.000000, confidence=0.900000
@@ -21,3 +22,4 @@ Input: <Mammal --> Animal>. Priority=1.000000 Truth: frequency=1.000000, confide
 a cat is an animal?
 Input: <Cat --> Animal>?
 Answer: <Cat --> Animal>. Truth: frequency=1.000000, confidence=0.460227
+```
