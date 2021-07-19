@@ -40,7 +40,7 @@ while True:
     #1. get entities
     cmd = """curl --request POST --url http://localhost:8081/factextraction/analyze   --header 'accept: application/json'   --header 'content-type: application/json'   --data '{"docId": "doc1", "text": "%s", "extractConcepts": "true", "language" : "en" }'"""
     sentence = input("") #"Jack founded Alibaba with investments from SoftBank and Goldman" #"the cat eats mice" #
-    if sentence.startswith("*"):
+    if sentence.startswith("*") or sentence.startswith("//") or sentence.isdigit() or sentence.startswith('(') or sentence.startswith('<'):
         print(sentence)
         continue
     print("//Input sentence: " + sentence)
@@ -58,7 +58,8 @@ while True:
             subjects.append(subject)
             for c in categories:
                 predicate = (c.split("<")[1].split(">")[0] if "<" in c else c.split(":")[-1]).replace(" ", "_").replace("(","_").replace(")","_")
-                print("<" + subject + " --> " + predicate + ">.")
+                if not predicate.startswith("wikicat_") and not predicate.startswith("wordnet_"): #for now to get only the few simple nodes
+                    print("<" + subject + " --> " + predicate + ">.")
         except:
             None
     #Build verb relations:
