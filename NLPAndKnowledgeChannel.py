@@ -45,35 +45,54 @@ while True:
         continue
     print("//Input sentence: " + sentence)
     punct = "?" if "?" in sentence else "." 
-    entities = invoke(cmd % sentence)["entities"]
+    ret = invoke(cmd % sentence)
+    matches = ret["matches"]
+    entities = ret["entities"]
+    names = {}
+    lastindex = None
+    print("//"+str(invoke(cmd % sentence)["matches"]))
     #2. retrieve KB nodes
-    for entity in entities:
+    for entity in entities: #first, deal with the *c
+        names[entity["id"]] = entity["name"]
+    for match in matches:
         try:
+            entity = match["entity"]
             cmd = """curl -X POST -H "Content-Type: application/json" -d '["%s" ]' http://localhost:8080/v2/knowledgegraph/entities"""
             ret = invoke(cmd % entity["id"])
             #2.1 Get categories:
             categories = ret["entities"][list(ret["entities"].keys())[0]]["categories"]
             #2.2 Build inheritance statements:
-            subject = entity["name"].replace(" ", "_").replace("(","_").replace(")","_")
-            subjects.append(subject)
+            subject = names[entity["id"]].replace(" ", "_").replace("(","_").replace(")","_")
+            index = match["charOffset"]
+            if lastindex != None and index < lastindex:
+                subjects = subjects + [subject]
+            else:
+                subjects = [subject] + subjects
+            lastindex = index
             for c in categories:
                 predicate = (c.split("<")[1].split(">")[0] if "<" in c else c.split(":")[-1]).replace(" ", "_").replace("(","_").replace(")","_")
                 if not predicate.startswith("wikicat_") and not predicate.startswith("wordnet_"): #for now to get only the few simple nodes
                     print("<" + subject + " --> " + predicate + ">.")
         except:
-            None
+           None
     #Build verb relations:
     cmd = """curl --data '""" + sentence + """' 'http://localhost:9000/?properties={%22annotators%22%3A%22tokenize%2Cssplit%2Cpos%22%2C%22outputFormat%22%3A%22json%22}' -o -"""
     ret = invoke(cmd)
-    for sentence in ret["sentences"]:
-        for token in sentence["tokens"]:
-            if token["pos"].startswith("VB"):
+    for s in ret["sentences"]:
+        for token in s["tokens"]:
+            if token["pos"].startswith("VB") and len(subjects) > 0:
                 relation = token["word"].upper()
-                subjects_1 = subjects[1] if len(subjects)>1 else ("?1" if punct == "?" else None) #questions support
+                subjects_1 = subjects[1] if len(subjects) > 1 else subjects[0]
+                subjects_0 = subjects[0] if len(subjects) > 1 else subjects[0]
+                if punct == "?" and "what" in sentence or "who" in sentence:
+                    if sentence.lower().startswith("what") or sentence.lower().startswith("who"):
+                        subjects_1 = "?1"
+                    else:
+                        subjects_0 = "?1"
                 if subjects_1 != None and len(subjects)>0:
                     if relation != "IS":
-                        print("<(" + subjects[0] + " * " + subjects_1 + ") --> "+ relation + ">" + punct)
+                        print("<(" + subjects_1 + " * " + subjects_0 + ") --> "+ relation + ">" + punct)
                     else:
-                        print("<" + subjects_1 + " --> " + subjects[0] + ">" + punct)
+                        print("<" + subjects_1 + " --> " + subjects_0 + ">" + punct)
         break
     sys.stdout.flush()
