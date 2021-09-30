@@ -13,7 +13,7 @@
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS ORp
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
@@ -172,14 +172,14 @@ def wordnet_tag(tag):
 
 #pos-tag the words in the input sentence, and lemmatize them thereafter using Wordnet
 def sentence_and_types(text):
-    tokens = [word for word in word_tokenize(text) if word.isalpha()]
+    tokens = [word for word in word_tokenize(text)]
     wordtypes_ordered = nltk.pos_tag(tokens, tagset='universal')
     wordtypes = dict(wordtypes_ordered)
     #NamedEntities = {key:value for (key,value) in [(x.lower(),x) for x in tokens]}
     handleInstance = lambda word: "{"+word+"}" if word[0].isupper() else word
     tokens = [handleInstance(lemma.lemmatize(word, pos = wordnet_tag(wordtypes[word]))) for word in tokens]
     wordtypes = dict([(tokens[i], wordtypes_ordered[i][1]) for i in range(len(tokens))])
-    wordtypes = {key : ("BE" if key == "be" else ("IF" if key == "if" else ("NOUN" if value=="PRON" else value))) for (key,value) in wordtypes.items()}
+    wordtypes = {key : ("BE" if key == "be" else ("IF" if key == "if" else ("NOUN" if value=="PRON" or value=="NUM" else value))) for (key,value) in wordtypes.items()}
     indexed_wordtypes = []
     i = 0
     lasttoken = None
@@ -295,7 +295,7 @@ while True:
     isQuestion = line.endswith("?")
     isGoal = line.endswith("!")
     isCommand = line.startswith("*") or line.startswith("//") or line.isdigit() or line.startswith('(') or line.startswith('<')
-    isNegated = " not " in (" " + line + " ")
+    isNegated = " not " in (" " + line.lower() + " ") or " no " in (" " + line.lower() + " ")
     if isCommand:
         if line.startswith("*eternal=false"):
             eternal = False
